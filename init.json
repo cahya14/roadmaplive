@@ -2,8 +2,8 @@
   "status": "success",
   "latest_version": "1.0.11",
   "banner_url": "https://cahya14.github.io/roadmaplive/19432.jpeg",
-  "version_code": 6,
-  "min_required_version": "1.0.9",
+  "version_code": 8,
+  "min_required_version": "2.2.12",
   "release_date": "2026-03-09",
   "update_info": {
     "title": "Pembaruan Versi Terbaru!",
