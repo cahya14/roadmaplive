@@ -1,6 +1,7 @@
 {
   "status": "success",
   "latest_version": "1.0.11",
+  "banner_url": "https://cahya14.github.io/roadmaplive/banner2.jpg",
   "version_code": 6,
   "min_required_version": "1.0.9",
   "release_date": "2026-03-09",
