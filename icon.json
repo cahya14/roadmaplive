@@ -1,0 +1,55 @@
+{
+  "status": "success",
+  "data": [
+    {
+      "icon_url": "https://roadmapdtiapp.netlify.app/icon/pin.png",
+      "module": "roadmap",
+      "controller": "notif"
+    },
+    {
+      "icon_url": "https://roadmapdtiapp.netlify.app/icon/usulan.png",
+      "module": "roadmap",
+      "controller": "usulan"
+    },
+    {
+      "icon_url": "https://roadmapdtiapp.netlify.app/icon/kajian.png",
+      "module": "roadmap",
+      "controller": "kajian"
+    },
+    {
+      "icon_url": "https://roadmapdtiapp.netlify.app/icon/project.png",
+      "module": "roadmap",
+      "controller": "project"
+    },
+    {
+      "icon_url": "https://roadmapdtiapp.netlify.app/icon/personal.png",
+      "module": "roadmap",
+      "controller": "personal"
+    },
+    {
+      "icon_url": "https://roadmapdtiapp.netlify.app/icon/pin.png",
+      "module": "default",
+      "controller": "default"
+    },
+    {
+      "icon_url": "https://roadmapdtiapp.netlify.app/icon/pin.png",
+      "module": "roadmap",
+      "controller": "pos_ronda"
+    },
+    {
+      "icon_url": "https://roadmapdtiapp.netlify.app/icon/heroes.png",
+      "module": "roadmap",
+      "controller": "heroes"
+    },
+    {
+      "icon_url": "https://roadmapdtiapp.netlify.app/icon/monit2.png",
+      "module": "roadmap",
+      "controller": "penugasan_kajian"
+    },
+    {
+      "icon_url": "https://roadmapdtiapp.netlify.app/icon/monitoring.png",
+      "module": "roadmap",
+      "controller": "monitoring"
+    }
+  ]
+}

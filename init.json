@@ -1,0 +1,20 @@
+{
+  "status": "success",
+  "latest_version": "1.0.11",
+  "version_code": 6,
+  "min_required_version": "1.0.9",
+  "release_date": "2026-03-09",
+  "update_info": {
+    "title": "Pembaruan Versi Terbaru!",
+    "is_force_update": false,
+    "download_url": "https://roadmapdti.netlify.app/app-release.apk",
+    "file_size": "24MB"
+  },
+  "changelog": [
+    "Penambahan fitur Mode Gelap (Dark Mode).",
+    "Peningkatan kecepatan loading halaman utama hingga 20%.",
+    "Perbaikan bug pada sistem login.",
+    "Optimalisasi penggunaan baterai."
+  ],
+  "message": "Kami menyarankan Anda untuk memperbarui aplikasi demi keamanan dan performa yang lebih baik."
+}
