@@ -2,52 +2,52 @@
   "status": "success",
   "data": [
     {
-      "icon_url": "https://roadmapdtiapp.netlify.app/icon/pin.png",
+      "icon_url": "https://cahya14.github.io/roadmaplive/icon/pin.png",
       "module": "roadmap",
       "controller": "notif"
     },
     {
-      "icon_url": "https://roadmapdtiapp.netlify.app/icon/usulan.png",
+      "icon_url": "https://cahya14.github.io/roadmaplive/icon/usulan.png",
       "module": "roadmap",
       "controller": "usulan"
     },
     {
-      "icon_url": "https://roadmapdtiapp.netlify.app/icon/kajian.png",
+      "icon_url": "https://cahya14.github.io/roadmaplive/icon/kajian.png",
       "module": "roadmap",
       "controller": "kajian"
     },
     {
-      "icon_url": "https://roadmapdtiapp.netlify.app/icon/project.png",
+      "icon_url": "https://cahya14.github.io/roadmaplive/icon/project.png",
       "module": "roadmap",
       "controller": "project"
     },
     {
-      "icon_url": "https://roadmapdtiapp.netlify.app/icon/personal.png",
+      "icon_url": "https://cahya14.github.io/roadmaplive/icon/personal.png",
       "module": "roadmap",
       "controller": "personal"
     },
     {
-      "icon_url": "https://roadmapdtiapp.netlify.app/icon/pin.png",
+      "icon_url": "https://cahya14.github.io/roadmaplive/icon/pin.png",
       "module": "default",
       "controller": "default"
     },
     {
-      "icon_url": "https://roadmapdtiapp.netlify.app/icon/pin.png",
+      "icon_url": "https://cahya14.github.io/roadmaplive/icon/pin.png",
       "module": "roadmap",
       "controller": "pos_ronda"
     },
     {
-      "icon_url": "https://roadmapdtiapp.netlify.app/icon/heroes.png",
+      "icon_url": "https://cahya14.github.io/roadmaplive/icon/heroes.png",
       "module": "roadmap",
       "controller": "heroes"
     },
     {
-      "icon_url": "https://roadmapdtiapp.netlify.app/icon/monit2.png",
+      "icon_url": "https://cahya14.github.io/roadmaplive/icon/monit2.png",
       "module": "roadmap",
       "controller": "penugasan_kajian"
     },
     {
-      "icon_url": "https://roadmapdtiapp.netlify.app/icon/monitoring.png",
+      "icon_url": "https://cahya14.github.io/roadmaplive/icon/monitoring.png",
       "module": "roadmap",
       "controller": "monitoring"
     }
