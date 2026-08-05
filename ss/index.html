@@ -899,20 +899,29 @@
       text-shadow: 0 0 80px #ffffff, 0 0 130px #dc2626;
     }
 
-    /* MODE 3: RESULT WINNER CEREMONY STAGE MERAH PUTIH GLASS */
+    /* MODE 3: RESULT WINNER CEREMONY STAGE MERAH PUTIH */
     .result-stage {
       flex-direction: column;
       align-items: center;
       justify-content: center;
       width: 100%;
       height: 100%;
+      background: linear-gradient(135deg, rgba(153, 27, 27, 0.94), rgba(69, 10, 10, 0.96));
+      backdrop-filter: blur(16px);
       border: 4px solid var(--accent-gold);
       border-radius: 2.5rem;
       padding: 1.5rem 2.5rem;
       text-align: center;
-      box-shadow: 0 0 90px rgba(251, 191, 36, 0.5);
+      box-shadow: 0 0 90px rgba(251, 191, 36, 0.6);
       position: relative;
       overflow: hidden;
+      transition: background 0.5s ease;
+    }
+
+    /* When Video Background is Active for Result Stage, make Result Stage Glassmorphic Transparent */
+    body.has-video-bg .result-stage {
+      background: linear-gradient(135deg, rgba(153, 27, 27, 0.45), rgba(69, 10, 10, 0.55)) !important;
+      backdrop-filter: blur(12px) !important;
     }
 
     /* Result Stage Players Matchup Banner */
@@ -928,7 +937,7 @@
 
     .result-player-pill {
       flex: 1;
-      background: rgba(2, 6, 23, 0.7);
+      background: rgba(2, 6, 23, 0.75);
       border: 2.5px solid rgba(255, 255, 255, 0.85);
       border-radius: 1.25rem;
       padding: 0.5rem 1.5rem;
@@ -985,6 +994,7 @@
     }
 
     @keyframes trophy-bounce {
+
       from {
         transform: translateY(0) scale(1);
       }
@@ -1141,7 +1151,7 @@
   <div class="video-background-wrapper">
     <video id="html5BgVideo" autoplay loop muted playsinline
       style="display:none; width:100%; height:100%; object-fit:cover; opacity:0.85;"></video>
-    <iframe id="ytBgPlayer" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen
+    <iframe id="ytBgPlayer" src="about:blank" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen
       style="display:none;">
     </iframe>
     <div class="video-overlay-gradient"></div>
@@ -1250,7 +1260,7 @@
       </div>
     </div>
 
-    <!-- MODE 3: RESULT WINNER CEREMONY STAGE MERAH PUTIH (TRANSPARENT GLASS & BOTH PLAYER NAMES) -->
+    <!-- MODE 3: RESULT WINNER CEREMONY STAGE MERAH PUTIH -->
     <div id="stageResult" class="view-stage result-stage">
       <i id="trophyIcon" class="fa-solid fa-trophy trophy-icon"></i>
 
@@ -1378,9 +1388,9 @@
       eventName: 'LOMBA 17 AGUSTUS',
       highlightName: 'HARI KEMERDEKAAN RI',
       setScores: [],
-      ytPreshow: '5qap5aO4i9A',
-      ytMatch: 'L_LUpnjgPso',
-      ytResult: '3JZ_D3ELwOQ'
+      ytPreshow: '',
+      ytMatch: '',
+      ytResult: ''
     };
 
     let activeYtVideoId = '';
@@ -1399,27 +1409,36 @@
 
     function updateVideoBackground(mode, customPreshow, customMatch, customResult) {
       let rawUrl = '';
-      if (mode === 'preshow') rawUrl = customPreshow || currentState.ytPreshow || '';
-      else if (mode === 'result') rawUrl = customResult || currentState.ytResult || '';
-      else rawUrl = customMatch || currentState.ytMatch || '';
+      if (mode === 'preshow') rawUrl = customPreshow !== undefined ? customPreshow : currentState.ytPreshow;
+      else if (mode === 'result') rawUrl = customResult !== undefined ? customResult : currentState.ytResult;
+      else rawUrl = customMatch !== undefined ? customMatch : currentState.ytMatch;
 
       const iframe = document.getElementById('ytBgPlayer');
       const videoEl = document.getElementById('html5BgVideo');
 
       if (!rawUrl || rawUrl.trim() === '') {
+        // Complete video unloading to prevent background audio or lingering previous video
         iframe.style.display = 'none';
-        iframe.src = '';
+        iframe.src = 'about:blank';
         videoEl.style.display = 'none';
         videoEl.pause();
+        videoEl.removeAttribute('src');
+        videoEl.load();
+        activeYtVideoId = '';
+        activeMp4Url = '';
+        document.body.classList.remove('has-video-bg');
         return;
       }
 
+      document.body.classList.add('has-video-bg');
       const ytId = extractYouTubeId(rawUrl);
 
       if (ytId) {
-        // Clean YouTube Embed (WITHOUT restrictive origin param to eliminate Configuration Error)
+        // Clean YouTube Embed
         videoEl.style.display = 'none';
         videoEl.pause();
+        videoEl.removeAttribute('src');
+        videoEl.load();
         activeMp4Url = '';
 
         iframe.style.display = 'block';
@@ -1430,7 +1449,7 @@
       } else {
         // Direct Video File (Local Video or Remote MP4) Branch
         iframe.style.display = 'none';
-        iframe.src = '';
+        iframe.src = 'about:blank';
         activeYtVideoId = '';
 
         videoEl.style.display = 'block';
@@ -1618,9 +1637,11 @@
       const eventName = data.event_name || data.eventName || currentState.eventName;
       const highlightName = data.highlight_name || data.highlightName || currentState.highlightName;
       const setScores = data.set_scores || data.setScores || currentState.setScores || [];
-      const ytPreshow = data.yt_preshow || data.ytPreshow || currentState.ytPreshow;
-      const ytMatch = data.yt_match || data.ytMatch || currentState.ytMatch;
-      const ytResult = data.yt_result || data.ytResult || currentState.ytResult;
+
+      // Per-page video link assignment (if null or undefined in payload, keep empty string)
+      const ytPreshow = data.yt_preshow !== undefined && data.yt_preshow !== null ? data.yt_preshow : (data.ytPreshow !== undefined && data.ytPreshow !== null ? data.ytPreshow : currentState.ytPreshow);
+      const ytMatch = data.yt_match !== undefined && data.yt_match !== null ? data.yt_match : (data.ytMatch !== undefined && data.ytMatch !== null ? data.ytMatch : currentState.ytMatch);
+      const ytResult = data.yt_result !== undefined && data.yt_result !== null ? data.yt_result : (data.ytResult !== undefined && data.ytResult !== null ? data.ytResult : currentState.ytResult);
 
       currentState = {
         p1Score, p2Score, p1Games, p2Games, p1Name, p2Name, p1Color, p2Color,
@@ -1632,7 +1653,7 @@
       // Switch LCD View Mode
       switchStageMode(viewMode);
 
-      // Update Direct MP4 / YouTube Video Background
+      // Update Direct MP4 / YouTube Video Background for current view mode
       updateVideoBackground(viewMode, ytPreshow, ytMatch, ytResult);
 
       // Pre-Show Event Name & Highlight Name Assignment
