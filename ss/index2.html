@@ -1,0 +1,1912 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description"
+    content="Live Scoreboard Viewer Stream Display - Realtime Supabase Sync Spesial 17an Merah Putih.">
+  <title>Live Scoreboard Viewer - Merah Putih Kemerdekaan RI</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&family=Space+Mono:wght@700&family=Teko:wght@700&display=swap"
+    rel="stylesheet">
+
+  <!-- Supabase JS Client for Instant 0-Delay Realtime WebSockets -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    :root {
+      --bg-dark: transparent;
+      --red-primary: #dc2626;
+      --red-dark: #991b1b;
+      --red-deep: #450a0a;
+      --red-bright: #ef4444;
+      --white-pure: #ffffff;
+      --white-cream: #fff1f2;
+      --accent-gold: #fbbf24;
+      --accent-green: #22c55e;
+      --text-main: #ffffff;
+      --text-dark: #881337;
+      --text-muted: #fecdd3;
+      --border-color: rgba(255, 255, 255, 0.4);
+      --font-main: 'Outfit', sans-serif;
+      --font-mono: 'Space Mono', monospace;
+      --font-teko: 'Teko', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      font-family: var(--font-main);
+      background-color: #1a0303;
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 1.25rem;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Ambient Canvas Particles Layer */
+    #ambientCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -4;
+      pointer-events: none;
+    }
+
+    /* Dual Video Background Player Layer (Direct MP4 + YouTube Embed) */
+    .video-background-wrapper {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 100vw;
+      height: 56.25vw;
+      /* 16:9 aspect ratio scaling */
+      min-height: 100vh;
+      min-width: 177.77vh;
+      transform: translate(-50%, -50%);
+      z-index: -3;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .video-background-wrapper video,
+    .video-background-wrapper iframe {
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      opacity: 0.85;
+      /* Vivid high opacity for background video */
+      filter: contrast(1.1) brightness(0.95);
+      transition: opacity 0.6s ease;
+      object-fit: cover;
+    }
+
+    /* Transparent Glass Overlay Gradient */
+    .video-overlay-gradient {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, rgba(153, 27, 27, 0.2) 0%, rgba(30, 4, 4, 0.45) 100%);
+      pointer-events: none;
+      z-index: -2;
+    }
+
+    /* Animated Ambient Merah Putih Ambient Background */
+    body::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle at 25% 25%, rgba(220, 38, 38, 0.25), transparent 45%),
+        radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.2), transparent 45%),
+        radial-gradient(circle at 50% 50%, rgba(153, 27, 27, 0.3), transparent 50%);
+      animation: rotate-ambient 20s linear infinite;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    @keyframes rotate-ambient {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Top Live Stream Header - Merah Putih Glassmorphism Theme */
+    header {
+      background: linear-gradient(135deg, rgba(153, 27, 27, 0.85), rgba(69, 10, 10, 0.9));
+      backdrop-filter: blur(16px);
+      border: 2.5px solid var(--white-pure);
+      border-radius: 1.25rem;
+      padding: 0.85rem 1.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 12px 35px rgba(220, 38, 38, 0.4);
+      z-index: 10;
+      height: 75px;
+    }
+
+    /* Left Section: Live Dot & Fixed Width Broadcast News Ticker Box */
+    .brand-live {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex: 1;
+      max-width: 45%;
+      overflow: hidden;
+    }
+
+    .live-dot {
+      width: 18px;
+      height: 18px;
+      background-color: var(--accent-gold);
+      border-radius: 50%;
+      box-shadow: 0 0 20px var(--accent-gold);
+      animation: pulse-gold 1.5s infinite;
+      flex-shrink: 0;
+    }
+
+    .live-dot.disconnected {
+      background-color: var(--white-pure);
+      box-shadow: 0 0 18px var(--white-pure);
+      animation: none;
+    }
+
+    @keyframes pulse-gold {
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      50% {
+        transform: scale(1.4);
+        opacity: 0.6;
+      }
+    }
+
+    /* Fixed Width Ticker Box */
+    .header-ticker-box {
+      width: 100%;
+      height: 45px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .ticker-content {
+      white-space: nowrap;
+      position: absolute;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      transition: all 0.4s ease;
+    }
+
+    /* Highlight Name: Super Big Gold News Marquee Ticker (Right to Left Slide) */
+    .ticker-highlight {
+      font-family: var(--font-teko);
+      font-size: 2.4rem;
+      line-height: 1;
+      color: var(--accent-gold);
+      text-shadow: 0 0 20px var(--accent-gold), 0 4px 12px rgba(0, 0, 0, 0.9);
+      animation: marquee-slide 6s linear infinite;
+    }
+
+    @keyframes marquee-slide {
+      0% {
+        transform: translateX(100%);
+      }
+
+      100% {
+        transform: translateX(-120%);
+      }
+    }
+
+    /* Event Name: Merah Putih 3D Flip Entrance */
+    .ticker-event {
+      font-size: 1.45rem;
+      color: var(--white-pure);
+      text-shadow: 0 0 20px rgba(255, 255, 255, 0.9), 0 4px 10px rgba(0, 0, 0, 0.8);
+      animation: flip3d-entrance 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes flip3d-entrance {
+      from {
+        opacity: 0;
+        transform: perspective(400px) rotateX(90deg) scale(0.8);
+      }
+
+      to {
+        opacity: 1;
+        transform: perspective(400px) rotateX(0deg) scale(1);
+      }
+    }
+
+    /* Right Section: Fixed Right-Aligned Meta, Status Badge & Timer */
+    .header-right-meta {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+
+    .set-info-text {
+      font-size: 1.25rem;
+      font-weight: 900;
+      color: var(--white-pure);
+      white-space: nowrap;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+    }
+
+    .status-badge {
+      background: linear-gradient(135deg, #fbbf24, #d97706);
+      color: #000;
+      font-weight: 900;
+      font-size: 0.95rem;
+      padding: 0.4rem 1.2rem;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      display: none;
+      box-shadow: 0 0 20px rgba(251, 191, 36, 0.6);
+      animation: badge-bounce 0.8s infinite alternate;
+      white-space: nowrap;
+    }
+
+    .status-badge.match-point {
+      background: linear-gradient(135deg, #ffffff, #fecdd3);
+      color: #991b1b;
+      box-shadow: 0 0 25px rgba(255, 255, 255, 0.8);
+    }
+
+    @keyframes badge-bounce {
+      from {
+        transform: translateY(0) scale(1);
+      }
+
+      to {
+        transform: translateY(-4px) scale(1.05);
+      }
+    }
+
+    /* Larger & Bolder Timer Display Merah Putih */
+    .timer-display {
+      font-family: var(--font-mono);
+      font-size: 2.1rem;
+      font-weight: 900;
+      color: var(--white-pure);
+      background: linear-gradient(135deg, rgba(220, 38, 38, 0.85), rgba(153, 27, 27, 0.9));
+      padding: 0.4rem 1.35rem;
+      border-radius: 0.85rem;
+      border: 2px solid var(--white-pure);
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      box-shadow: 0 0 25px rgba(220, 38, 38, 0.7);
+      letter-spacing: 0.05em;
+    }
+
+    /* Stages Container */
+    .stage-container {
+      flex: 1;
+      margin: 1.25rem 0;
+      position: relative;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
+
+    .view-stage {
+      display: none !important;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Mode 1: Pre-Show Active */
+    .preshow-stage.active {
+      display: flex !important;
+      animation: zoomInStage 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    /* Mode 2: Active Match Grid 50% 50% Responsive Split (Smooth Width Expansion) */
+    .scoreboard-stage.active {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.75rem;
+      width: 100%;
+      height: 100%;
+      transition: grid-template-columns 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      animation: zoomInStage 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    /* Smooth 70% Width Shift when Left Player Scores */
+    .scoreboard-stage.expand-left {
+      grid-template-columns: 7fr 3fr !important;
+    }
+
+    /* Smooth 70% Width Shift when Right Player Scores */
+    .scoreboard-stage.expand-right {
+      grid-template-columns: 3fr 7fr !important;
+    }
+
+    /* Mode 3: Result Ceremony Active */
+    .result-stage.active {
+      display: flex !important;
+      animation: zoomInStage 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes zoomInStage {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    /* MODE 1: TRANSPARENT TV BROADCAST BUMPER INTRO STAGE MERAH PUTIH */
+    .preshow-stage {
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      height: 100%;
+      position: relative;
+      padding: 1rem 0;
+      perspective: 1000px;
+      background: transparent !important;
+    }
+
+    /* Sweeping Merah Putih TV Studio Lasers */
+    .spotlight-left,
+    .spotlight-right {
+      position: absolute;
+      top: -20%;
+      width: 40vw;
+      height: 140%;
+      background: linear-gradient(180deg, rgba(220, 38, 38, 0.35), transparent);
+      clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .spotlight-left {
+      left: 5%;
+      animation: sweep-left 4s ease-in-out infinite alternate;
+    }
+
+    .spotlight-right {
+      right: 5%;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.35), transparent);
+      animation: sweep-right 4s ease-in-out infinite alternate;
+    }
+
+    @keyframes sweep-left {
+      from {
+        transform: rotate(-15deg);
+      }
+
+      to {
+        transform: rotate(15deg);
+      }
+    }
+
+    @keyframes sweep-right {
+      from {
+        transform: rotate(15deg);
+      }
+
+      to {
+        transform: rotate(-15deg);
+      }
+    }
+
+    .preshow-header-group {
+      text-align: center;
+      z-index: 5;
+    }
+
+    .belt-badge {
+      background: linear-gradient(135deg, #fbbf24, #b45309);
+      color: #000;
+      font-weight: 900;
+      font-size: 1.05rem;
+      padding: 0.5rem 1.85rem;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      box-shadow: 0 0 35px rgba(251, 191, 36, 0.8);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.7rem;
+    }
+
+    .main-event-title-3d {
+      font-family: var(--font-teko);
+      font-size: clamp(3.5rem, 8vw, 6.5rem);
+      line-height: 0.9;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #fff;
+      text-shadow:
+        0 2px 0 #dc2626,
+        0 4px 0 #991b1b,
+        0 6px 0 #450a0a,
+        0 8px 15px rgba(0, 0, 0, 0.9),
+        0 0 50px rgba(220, 38, 38, 0.8);
+      margin-top: 0.5rem;
+      transform: perspective(600px) rotateX(10deg);
+    }
+
+    /* TV Broadcast Player Arena Cards Glassmorphism Merah Putih */
+    .tv-bumper-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      gap: 2rem;
+      z-index: 5;
+      margin: auto 0;
+      transition: all 0.5s ease;
+    }
+
+    .player-card-tv {
+      flex: 1;
+      border-radius: 2.5rem;
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(12px) !important;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.25rem;
+      transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      transform-style: preserve-3d;
+    }
+
+    /* Side A Glassmorphism */
+    .player-card-tv.side-a {
+      background: linear-gradient(135deg, rgba(220, 38, 38, 0.45), rgba(127, 29, 29, 0.65)) !important;
+      border: 3.5px solid rgba(255, 255, 255, 0.85);
+      box-shadow: 0 15px 50px rgba(220, 38, 38, 0.5), inset 0 0 35px rgba(255, 255, 255, 0.25);
+    }
+
+    /* Side B Glassmorphism */
+    .player-card-tv.side-b {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.6), rgba(254, 205, 211, 0.7)) !important;
+      border: 3.5px solid var(--red-primary);
+      box-shadow: 0 15px 50px rgba(255, 255, 255, 0.5), inset 0 0 35px rgba(220, 38, 38, 0.25);
+    }
+
+    .corner-label-tv {
+      font-weight: 900;
+      font-size: 1.05rem;
+      letter-spacing: 0.2em;
+      padding: 0.4rem 1.5rem;
+      border-radius: 999px;
+      text-transform: uppercase;
+    }
+
+    .side-a .corner-label-tv {
+      background: var(--white-pure);
+      color: var(--red-dark);
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+    }
+
+    .side-b .corner-label-tv {
+      background: var(--red-primary);
+      color: var(--white-pure);
+      box-shadow: 0 0 20px rgba(220, 38, 38, 0.8);
+    }
+
+    .player-avatar-tv {
+      width: 125px;
+      height: 125px;
+      border-radius: 50%;
+      background: rgba(2, 6, 23, 0.85);
+      border: 4px solid rgba(255, 255, 255, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 4rem;
+      color: #fff;
+      box-shadow: 0 0 40px rgba(255, 255, 255, 0.5);
+    }
+
+    .side-b .player-avatar-tv {
+      background: var(--red-dark);
+      border-color: var(--red-primary);
+      color: var(--white-pure);
+    }
+
+    /* 3D Metallic Text Effect for Player Names */
+    .fighter-name-3d {
+      font-family: var(--font-teko);
+      font-size: clamp(3rem, 6vw, 5.5rem);
+      line-height: 0.95;
+      font-weight: 700;
+      color: #ffffff;
+      text-transform: uppercase;
+      text-shadow:
+        0 2px 0 #dc2626,
+        0 4px 0 #991b1b,
+        0 6px 0 #450a0a,
+        0 8px 15px rgba(0, 0, 0, 0.8),
+        0 0 40px rgba(255, 255, 255, 0.8);
+      transform: perspective(600px) rotateX(10deg);
+      letter-spacing: 0.04em;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      word-break: break-word;
+      max-height: 2.1em;
+    }
+
+    .side-b .fighter-name-3d {
+      color: var(--red-dark);
+      text-shadow:
+        0 2px 0 #ffffff,
+        0 4px 0 #fecdd3,
+        0 6px 0 #fda4af,
+        0 8px 15px rgba(0, 0, 0, 0.4),
+        0 0 30px rgba(220, 38, 38, 0.6);
+    }
+
+    /* 3D Center Golden VS Badge */
+    .vs-center-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      z-index: 10;
+      transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .vs-boxing-badge-3d {
+      font-family: var(--font-teko);
+      font-size: 6.5rem;
+      font-weight: 700;
+      line-height: 1;
+      color: #facc15;
+      background: linear-gradient(135deg, rgba(69, 10, 10, 0.85), rgba(2, 6, 23, 0.85));
+      border: 5px solid #facc15;
+      border-radius: 50%;
+      width: 150px;
+      height: 150px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-shadow: 0 4px 0 #b45309, 0 8px 25px #facc15;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 70px #facc15, inset 0 0 40px #facc15;
+      transform: perspective(500px) rotateY(-10deg);
+      animation: vs-3d-pulse 0.8s infinite alternate ease-in-out;
+    }
+
+    @keyframes vs-3d-pulse {
+      0% {
+        transform: perspective(500px) rotateY(-10deg) scale(1);
+      }
+
+      100% {
+        transform: perspective(500px) rotateY(10deg) scale(1.15);
+        box-shadow: 0 15px 60px rgba(0, 0, 0, 0.9), 0 0 100px #facc15;
+      }
+    }
+
+    .electric-sparks {
+      position: absolute;
+      top: -30px;
+      font-size: 3rem;
+      color: #facc15;
+      display: flex;
+      gap: 3.5rem;
+      pointer-events: none;
+      animation: spark-pulse 0.3s infinite alternate;
+    }
+
+    @keyframes spark-pulse {
+      0% {
+        opacity: 0.3;
+        transform: scale(0.8);
+      }
+
+      100% {
+        opacity: 1;
+        transform: scale(1.3);
+        filter: drop-shadow(0 0 20px #facc15);
+      }
+    }
+
+    .battle-subtext {
+      font-family: var(--font-teko);
+      font-size: 2.2rem;
+      letter-spacing: 0.25em;
+      color: var(--white-pure);
+      text-shadow: 0 0 20px var(--white-pure);
+      margin-top: 0.5rem;
+    }
+
+    /* PRE-SHOW SEQUENCED VISIBILITY CONTROL */
+    .preshow-stage.step-p1 .side-a {
+      display: flex;
+      transform: perspective(600px) rotateY(0deg) scale(1.2);
+      max-width: 1400px;
+      width: 95%;
+      margin: 0 auto;
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      backdrop-filter: none !important;
+      justify-content: center;
+    }
+
+    .preshow-stage.step-p1 .side-a .corner-label-tv,
+    .preshow-stage.step-p1 .side-a .player-avatar-tv {
+      display: none !important;
+    }
+
+    .preshow-stage.step-p1 .side-a .fighter-name-3d {
+      font-size: clamp(8.5rem, 18vw, 16.5rem) !important;
+      line-height: 0.88 !important;
+      letter-spacing: 0.06em !important;
+      color: #ffffff !important;
+      text-shadow:
+        0 4px 0 #dc2626,
+        0 8px 0 #991b1b,
+        0 12px 0 #450a0a,
+        0 15px 25px rgba(0, 0, 0, 0.9),
+        0 0 60px rgba(255, 255, 255, 0.9) !important;
+      max-height: none !important;
+    }
+
+    .preshow-stage.step-p1 .side-b,
+    .preshow-stage.step-p1 .vs-center-group {
+      display: none !important;
+    }
+
+    .preshow-stage.step-vs .vs-center-group {
+      display: flex;
+      transform: scale(1.9);
+      margin: auto;
+    }
+
+    .preshow-stage.step-vs .side-a,
+    .preshow-stage.step-vs .side-b {
+      display: none !important;
+    }
+
+    .preshow-stage.step-p2 .side-b {
+      display: flex;
+      transform: perspective(600px) rotateY(0deg) scale(1.2);
+      max-width: 1400px;
+      width: 95%;
+      margin: 0 auto;
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      backdrop-filter: none !important;
+      justify-content: center;
+    }
+
+    .preshow-stage.step-p2 .side-b .corner-label-tv,
+    .preshow-stage.step-p2 .side-b .player-avatar-tv {
+      display: none !important;
+    }
+
+    .preshow-stage.step-p2 .side-b .fighter-name-3d {
+      font-size: clamp(8.5rem, 18vw, 16.5rem) !important;
+      line-height: 0.88 !important;
+      letter-spacing: 0.06em !important;
+      color: #ffffff !important;
+      text-shadow:
+        0 4px 0 #dc2626,
+        0 8px 0 #991b1b,
+        0 12px 0 #450a0a,
+        0 15px 25px rgba(0, 0, 0, 0.9),
+        0 0 60px rgba(255, 255, 255, 0.9) !important;
+      max-height: none !important;
+    }
+
+    .preshow-stage.step-p2 .side-a,
+    .preshow-stage.step-p2 .vs-center-group {
+      display: none !important;
+    }
+
+    .preshow-stage.step-full .side-a,
+    .preshow-stage.step-full .side-b,
+    .preshow-stage.step-full .vs-center-group {
+      display: flex;
+      transform: scale(1);
+    }
+
+    /* MODE 2: ACTIVE MATCH SCOREBOARD STAGE */
+    .player-box {
+      border-radius: 2.25rem;
+      padding: 2.25rem 2.25rem 0 2.25rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border: 4px solid var(--white-pure);
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.6);
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(8px);
+      transition: background 0.6s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+      width: 100%;
+      height: 100%;
+    }
+
+    .player-box.serving {
+      border-color: var(--accent-gold);
+      box-shadow: 0 0 55px rgba(251, 191, 36, 0.6);
+    }
+
+    /* DOUBLE SHIMMER FLASH SWEEP (2x Sequential Sweeps) */
+    .panel-shimmer {
+      position: absolute;
+      top: 0;
+      left: -150%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg,
+          transparent,
+          rgba(255, 255, 255, 0.85),
+          rgba(255, 255, 255, 1),
+          rgba(255, 255, 255, 0.85),
+          transparent);
+      transform: skewX(-25deg);
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .panel-shimmer.active {
+      animation: doubleShimmerSweep 0.9s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes doubleShimmerSweep {
+      0% {
+        left: -150%;
+        opacity: 1;
+      }
+
+      40% {
+        left: 150%;
+        opacity: 1;
+      }
+
+      45% {
+        left: -150%;
+        opacity: 0;
+      }
+
+      50% {
+        left: -150%;
+        opacity: 1;
+      }
+
+      100% {
+        left: 150%;
+        opacity: 0;
+      }
+    }
+
+    /* Centered Header & Larger Player Name */
+    .box-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      z-index: 2;
+      width: 100%;
+    }
+
+    .header-left-group {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+
+    /* Player Name Centered & Bolder */
+    .player-name {
+      font-size: clamp(2.2rem, 4.5vw, 3.4rem);
+      font-weight: 900;
+      color: #fff;
+      text-align: center;
+      text-shadow: 0 4px 18px rgba(0, 0, 0, 0.8), 0 0 25px rgba(255, 255, 255, 0.4);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      word-break: break-word;
+      line-height: 1.05;
+      max-height: 2.2em;
+      width: 100%;
+    }
+
+    /* Giant Digital Score */
+    .score-container {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: auto 0;
+    }
+
+    .score-value {
+      font-size: clamp(8.5rem, 24vw, 17rem);
+      font-weight: 900;
+      text-align: center;
+      color: #fff;
+      line-height: 1;
+      letter-spacing: -0.05em;
+      text-shadow: 0 0 50px rgba(255, 255, 255, 0.6);
+      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.35), text-shadow 0.2s ease;
+      z-index: 2;
+    }
+
+    /* Attached Bottom Container for Games Won Score */
+    .box-footer-container {
+      background: rgba(69, 10, 10, 0.75);
+      backdrop-filter: blur(8px);
+      margin: 1rem -2.25rem 0 -2.25rem;
+      padding: 0.85rem 1.5rem;
+      border-top: 2.5px solid var(--white-pure);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 3;
+    }
+
+    .games-won-footer-label {
+      font-weight: 900;
+      font-size: 1.4rem;
+      color: var(--white-pure);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      text-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
+    }
+
+    /* Shockwave Ring Animation */
+    .shock-ring {
+      position: absolute;
+      width: 250px;
+      height: 250px;
+      border-radius: 50%;
+      border: 4px solid var(--white-pure);
+      opacity: 0;
+      transform: scale(0.2);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .shock-ring.active {
+      animation: shockwave 0.6s ease-out;
+    }
+
+    @keyframes shockwave {
+      0% {
+        opacity: 1;
+        transform: scale(0.3);
+        border-width: 12px;
+      }
+
+      50% {
+        opacity: 0.9;
+      }
+
+      100% {
+        opacity: 0;
+        transform: scale(2.4);
+        border-width: 1px;
+      }
+    }
+
+    .score-value.pop {
+      transform: scale(1.3);
+      text-shadow: 0 0 80px #ffffff, 0 0 130px #dc2626;
+    }
+
+    /* MODE 3: RESULT WINNER CEREMONY STAGE MERAH PUTIH */
+    .result-stage {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, rgba(153, 27, 27, 0.94), rgba(69, 10, 10, 0.96));
+      backdrop-filter: blur(16px);
+      border: 4px solid var(--accent-gold);
+      border-radius: 2.5rem;
+      padding: 1.5rem 2.5rem;
+      text-align: center;
+      box-shadow: 0 0 90px rgba(251, 191, 36, 0.6);
+      position: relative;
+      overflow: hidden;
+      transition: background 0.5s ease;
+    }
+
+    /* When Video Background is Active for Result Stage, make Result Stage Glassmorphic Transparent */
+    body.has-video-bg .result-stage {
+      background: linear-gradient(135deg, rgba(153, 27, 27, 0.45), rgba(69, 10, 10, 0.55)) !important;
+      backdrop-filter: blur(12px) !important;
+    }
+
+    /* Result Stage Players Matchup Banner */
+    .result-players-banner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+      margin-bottom: 0.6rem;
+      width: 100%;
+      max-width: 850px;
+    }
+
+    .result-player-pill {
+      flex: 1;
+      background: rgba(2, 6, 23, 0.75);
+      border: 2.5px solid rgba(255, 255, 255, 0.85);
+      border-radius: 1.25rem;
+      padding: 0.5rem 1.5rem;
+      text-align: center;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .result-player-pill.left {
+      border-color: var(--white-pure);
+    }
+
+    .result-player-pill.right {
+      border-color: var(--accent-gold);
+    }
+
+    .result-player-name {
+      font-family: var(--font-teko);
+      font-size: 2.4rem;
+      font-weight: 700;
+      color: var(--white-pure);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: block;
+      line-height: 1;
+    }
+
+    .result-vs-badge {
+      font-family: var(--font-teko);
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: var(--accent-gold);
+      background: rgba(69, 10, 10, 0.9);
+      border: 2px solid var(--accent-gold);
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 0 15px rgba(251, 191, 36, 0.6);
+    }
+
+    .trophy-icon {
+      font-size: 5.5rem;
+      color: #facc15;
+      filter: drop-shadow(0 0 45px #facc15);
+      animation: trophy-bounce 1s infinite alternate;
+      margin-bottom: 0.25rem;
+    }
+
+    @keyframes trophy-bounce {
+
+      from {
+        transform: translateY(0) scale(1);
+      }
+
+      to {
+        transform: translateY(-12px) scale(1.08);
+      }
+    }
+
+    .winner-title {
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: var(--accent-gold);
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+    }
+
+    .winner-name-big {
+      font-family: var(--font-teko);
+      font-size: clamp(3rem, 6.5vw, 5.5rem);
+      line-height: 1;
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 0 0 40px #facc15, 0 0 90px #fff;
+      margin: 0.2rem 0 1rem 0;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      word-break: break-word;
+    }
+
+    .result-stats-card {
+      background: rgba(2, 6, 23, 0.85);
+      border: 2px solid var(--white-pure);
+      border-radius: 1.5rem;
+      padding: 0.85rem 2.5rem;
+      display: flex;
+      gap: 3.5rem;
+      align-items: center;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+
+    .stat-val {
+      font-size: 1.95rem;
+      font-weight: 900;
+      color: var(--white-pure);
+    }
+
+    /* Result Stage Breakdown Chips for Completed Sets */
+    .set-chips-container {
+      margin-top: 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+      width: 100%;
+    }
+
+    .set-chips-label {
+      font-size: 0.85rem;
+      font-weight: 900;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .set-chips-wrapper {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.85rem;
+      max-width: 750px;
+    }
+
+    .set-chip {
+      background: linear-gradient(135deg, rgba(69, 10, 10, 0.85), rgba(2, 6, 23, 0.9));
+      border: 2px solid var(--accent-gold);
+      border-radius: 999px;
+      padding: 0.35rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+    }
+
+    .set-chip .set-num {
+      font-size: 0.95rem;
+      font-weight: 900;
+      color: var(--accent-gold);
+    }
+
+    .set-chip .set-val {
+      font-family: var(--font-mono);
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: var(--white-pure);
+    }
+
+    .set-chip-empty {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* Bottom Stream Footer */
+    footer {
+      background: linear-gradient(135deg, rgba(153, 27, 27, 0.75), rgba(69, 10, 10, 0.8));
+      backdrop-filter: blur(12px);
+      border-top: 2px solid var(--white-pure);
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.95rem;
+      color: var(--white-pure);
+      font-weight: 700;
+      z-index: 10;
+    }
+
+    .debug-bar {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: #f1f5f9;
+      background: #020617;
+      padding: 0.25rem 0.75rem;
+      border-radius: 0.35rem;
+      border: 1px solid #334155;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Ambient Merah Putih Particle Canvas (Always Working Base) -->
+  <canvas id="ambientCanvas"></canvas>
+
+  <!-- Dual Video Background Player Layer (Local Video / Direct MP4 / YouTube Embed) -->
+  <div class="video-background-wrapper">
+    <video id="html5BgVideo" autoplay loop muted playsinline
+      style="display:none; width:100%; height:100%; object-fit:cover; opacity:0.85;"></video>
+    <iframe id="ytBgPlayer" src="about:blank" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen
+      style="display:none;">
+    </iframe>
+    <div class="video-overlay-gradient"></div>
+  </div>
+
+  <!-- Top Header with Merah Putih Theme -->
+  <header>
+    <!-- Left Section: Live Dot + Fixed Width News Ticker Container -->
+    <div class="brand-live">
+      <div id="liveDot" class="live-dot"></div>
+      <div class="header-ticker-box">
+        <div id="txtHeaderTicker" class="ticker-content ticker-event">TOURNAMENT MATCH</div>
+      </div>
+    </div>
+
+    <!-- Right Section: Fixed Right-Aligned Set Info, Badge Status, and Timer -->
+    <div class="header-right-meta">
+      <span id="txtSetInfo" class="set-info-text">Set 1 dari 3 (11 Poin)</span>
+      <span id="badgeStatus" class="status-badge">DEUCE</span>
+      <div class="timer-display">
+        <i class="fa-solid fa-stopwatch"></i>
+        <span id="txtTimer">00:00</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Stages Container -->
+  <div class="stage-container">
+
+    <!-- MODE 1: TRANSPARENT TV BROADCAST BUMPER INTRO STAGE MERAH PUTIH -->
+    <div id="stagePreshow" class="view-stage preshow-stage step-p1">
+      <div class="spotlight-left"></div>
+      <div class="spotlight-right"></div>
+
+      <!-- Top Broadcast Championship Header -->
+      <div class="preshow-header-group">
+        <div id="preshowEventBadge" class="belt-badge"><i class="fa-solid fa-trophy"></i> LOMBA 17 AGUSTUS <i
+            class="fa-solid fa-trophy"></i></div>
+        <h1 id="preshowHighlightTitle" class="main-event-title-3d">HARI KEMERDEKAAN RI</h1>
+      </div>
+
+      <!-- Sports Player Arena Cards Glassmorphism -->
+      <div class="tv-bumper-wrapper">
+        <!-- Side A -->
+        <div class="player-card-tv side-a">
+          <div class="corner-label-tv">PLAYER 1</div>
+          <div id="avatarP1" class="player-avatar-tv"><i class="fa-solid fa-table-tennis-paddle-ball"></i></div>
+          <div id="preshowP1" class="fighter-name-3d">PEMAIN 1</div>
+        </div>
+
+        <!-- Center 3D Golden VS Emblem -->
+        <div class="vs-center-group">
+          <div class="electric-sparks">
+            <i class="fa-solid fa-bolt-lightning"></i>
+            <i class="fa-solid fa-bolt-lightning"></i>
+          </div>
+          <div class="vs-boxing-badge-3d">VS</div>
+          <div class="battle-subtext">HEAD TO HEAD</div>
+        </div>
+
+        <!-- Side B -->
+        <div class="player-card-tv side-b">
+          <div class="corner-label-tv">PLAYER 2</div>
+          <div id="avatarP2" class="player-avatar-tv"><i class="fa-solid fa-table-tennis-paddle-ball"></i></div>
+          <div id="preshowP2" class="fighter-name-3d">PEMAIN 2</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODE 2: ACTIVE MATCH SCOREBOARD STAGE (Dynamic Custom Colors from Flutter) -->
+    <div id="stageMatch" class="view-stage scoreboard-stage active">
+      <!-- Left Box -->
+      <div id="boxLeft" class="player-box serving">
+        <div id="shimmerLeft" class="panel-shimmer"></div>
+        <div class="box-header">
+          <div class="header-left-group">
+            <span id="nameLeft" class="player-name">Pemain 1</span>
+          </div>
+        </div>
+        <div class="score-container">
+          <div id="ringLeft" class="shock-ring"></div>
+          <div id="scoreLeft" class="score-value">0</div>
+        </div>
+        <!-- Attached Bottom Container for Games Won Score -->
+        <div class="box-footer-container">
+          <div id="gamesLeft" class="games-won-footer-label">GAMES WON: 0</div>
+        </div>
+      </div>
+
+      <!-- Right Box -->
+      <div id="boxRight" class="player-box">
+        <div id="shimmerRight" class="panel-shimmer"></div>
+        <div class="box-header">
+          <div class="header-left-group">
+            <span id="nameRight" class="player-name">Pemain 2</span>
+          </div>
+        </div>
+        <div class="score-container">
+          <div id="ringRight" class="shock-ring"></div>
+          <div id="scoreRight" class="score-value">0</div>
+        </div>
+        <!-- Attached Bottom Container for Games Won Score -->
+        <div class="box-footer-container">
+          <div id="gamesRight" class="games-won-footer-label">GAMES WON: 0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODE 3: RESULT WINNER CEREMONY STAGE MERAH PUTIH -->
+    <div id="stageResult" class="view-stage result-stage">
+      <i id="trophyIcon" class="fa-solid fa-trophy trophy-icon"></i>
+
+      <!-- Both Player Names Matchup Banner -->
+      <div class="result-players-banner">
+        <div class="result-player-pill left">
+          <span class="result-player-name" id="txtResultP1">PEMAIN 1</span>
+        </div>
+        <div class="result-vs-badge">VS</div>
+        <div class="result-player-pill right">
+          <span class="result-player-name" id="txtResultP2">PEMAIN 2</span>
+        </div>
+      </div>
+
+      <div id="txtWinnerTitle" class="winner-title">PEMENANG PERTANDINGAN</div>
+      <div id="txtWinnerName" class="winner-name-big">PEMAIN 1</div>
+
+      <div class="result-stats-card">
+        <div class="stat-item">
+          <span class="stat-label">SKOR GAME OVERALL</span>
+          <span id="txtResultGames" class="stat-val">2 - 1</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">TOTAL DURASI</span>
+          <span id="txtResultDuration" class="stat-val">12:35</span>
+        </div>
+      </div>
+
+      <!-- Per-Set Detail Breakdown Section -->
+      <div class="set-chips-container">
+        <div class="set-chips-label">RINCIAN SKOR PER SET</div>
+        <div id="setScoresList" class="set-chips-wrapper">
+          <div class="set-chip"><span class="set-num">SET 1:</span><span class="set-val">11 - 8</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <span><i class="fa-solid fa-cloud"></i> Status DB: <span id="txtSyncTime" class="debug-bar">Realtime
+        0-Delay</span></span>
+    <span>Papan Skor 17 Agustus Hari Kemerdekaan RI • Live LCD View</span>
+  </footer>
+
+  <script>
+    const SUPABASE_URL = 'https://tvchnxhzmdqdabuaeyqy.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2Y2hueGh6bWRxZGFidWFleXF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMwMjUwODIsImV4cCI6MjA5ODYwMTA4Mn0.cZ3lsWfkQAAH-OlwgN0HRVRmzA_3WrMoPtLR3CZ6G2U';
+
+    // Canvas Merah Putih Particle Light Animation System (100% Light & Guaranteed Working Base)
+    (function initCanvasParticles() {
+      const canvas = document.getElementById('ambientCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      let w = canvas.width = window.innerWidth;
+      let h = canvas.height = window.innerHeight;
+
+      window.addEventListener('resize', () => {
+        w = canvas.width = window.innerWidth;
+        h = canvas.height = window.innerHeight;
+      });
+
+      const particles = [];
+      const particleCount = 45;
+
+      for (let i = 0; i < particleCount; i++) {
+        particles.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          r: Math.random() * 3 + 1,
+          dx: (Math.random() - 0.5) * 1.5,
+          dy: -Math.random() * 1.8 - 0.5,
+          color: Math.random() > 0.4 ? 'rgba(239, 68, 68, ' : 'rgba(255, 255, 255, ',
+          alpha: Math.random() * 0.8 + 0.2
+        });
+      }
+
+      function drawParticles() {
+        ctx.clearRect(0, 0, w, h);
+        for (let i = 0; i < particles.length; i++) {
+          let p = particles[i];
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = p.color + p.alpha + ')';
+          ctx.shadowBlur = 12;
+          ctx.shadowColor = p.color + '1)';
+          ctx.fill();
+
+          p.x += p.dx;
+          p.y += p.dy;
+
+          if (p.y < -10) {
+            p.y = h + 10;
+            p.x = Math.random() * w;
+          }
+          if (p.x < -10 || p.x > w + 10) {
+            p.x = Math.random() * w;
+          }
+        }
+        requestAnimationFrame(drawParticles);
+      }
+      drawParticles();
+    })();
+
+    let currentState = {
+      p1Score: 0,
+      p2Score: 0,
+      p1Games: 0,
+      p2Games: 0,
+      p1Name: 'Pemain 1',
+      p2Name: 'Pemain 2',
+      p1Color: '#0f2027',
+      p2Color: '#141e30',
+      servingPlayer: 1,
+      isSwapped: false,
+      sportType: 'pingpong',
+      targetScore: 11,
+      bestOfSets: 3,
+      statusText: null,
+      elapsedSeconds: 0,
+      isTimerRunning: false,
+      winnerName: null,
+      viewMode: 'match',
+      eventName: 'LOMBA 17 AGUSTUS',
+      highlightName: 'HARI KEMERDEKAAN RI',
+      setScores: [],
+      ytPreshow: '',
+      ytMatch: '',
+      ytResult: ''
+    };
+
+    let activeYtVideoId = '';
+    let activeMp4Url = '';
+
+    function extractYouTubeId(urlOrId) {
+      if (!urlOrId) return '';
+      const str = String(urlOrId).trim();
+      if (str.length === 11 && !str.includes('/') && !str.includes('.') && !str.includes('=')) {
+        return str;
+      }
+      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|shorts\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+      const match = str.match(regExp);
+      return (match && match[2].length === 11) ? match[2] : '';
+    }
+
+    function updateVideoBackground(mode, customPreshow, customMatch, customResult) {
+      let rawUrl = '';
+      if (mode === 'preshow') rawUrl = customPreshow !== undefined ? customPreshow : currentState.ytPreshow;
+      else if (mode === 'result') rawUrl = customResult !== undefined ? customResult : currentState.ytResult;
+      else rawUrl = customMatch !== undefined ? customMatch : currentState.ytMatch;
+
+      const iframe = document.getElementById('ytBgPlayer');
+      const videoEl = document.getElementById('html5BgVideo');
+
+      if (!rawUrl || rawUrl.trim() === '') {
+        // Complete video unloading to prevent background audio or lingering previous video
+        iframe.style.display = 'none';
+        iframe.src = 'about:blank';
+        videoEl.style.display = 'none';
+        videoEl.pause();
+        videoEl.removeAttribute('src');
+        videoEl.load();
+        activeYtVideoId = '';
+        activeMp4Url = '';
+        document.body.classList.remove('has-video-bg');
+        return;
+      }
+
+      document.body.classList.add('has-video-bg');
+      const ytId = extractYouTubeId(rawUrl);
+
+      if (ytId) {
+        // Clean YouTube Embed
+        videoEl.style.display = 'none';
+        videoEl.pause();
+        videoEl.removeAttribute('src');
+        videoEl.load();
+        activeMp4Url = '';
+
+        iframe.style.display = 'block';
+        if (activeYtVideoId !== ytId) {
+          activeYtVideoId = ytId;
+          iframe.src = `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${ytId}&playsinline=1`;
+        }
+      } else {
+        // Direct Video File (Local Video or Remote MP4) Branch
+        iframe.style.display = 'none';
+        iframe.src = 'about:blank';
+        activeYtVideoId = '';
+
+        videoEl.style.display = 'block';
+        videoEl.muted = true;
+
+        if (activeMp4Url !== rawUrl) {
+          activeMp4Url = rawUrl;
+          videoEl.src = rawUrl;
+          videoEl.play().catch((e) => {
+            console.log('Video playback info:', e);
+          });
+        }
+      }
+    }
+
+    // Enable Autoplay on user click if browser policy blocks video initially
+    document.addEventListener('click', () => {
+      const videoEl = document.getElementById('html5BgVideo');
+      if (videoEl && videoEl.style.display !== 'none' && videoEl.paused) {
+        videoEl.muted = true;
+        videoEl.play().catch(() => { });
+      }
+    });
+
+    // Client-side Local Timer Interval
+    let localTimerInterval = null;
+
+    // Pre-Show Sequencer Step Index
+    let preshowStep = 0;
+    let preshowTimer = null;
+
+    // Alternating Header Title Ticker
+    let headerTickerState = 0;
+    let headerTickerTimer = null;
+
+    function startHeaderTicker() {
+      if (headerTickerTimer) return;
+      headerTickerTimer = setInterval(() => {
+        const el = document.getElementById('txtHeaderTicker');
+        if (!el) return;
+
+        headerTickerState = (headerTickerState + 1) % 2;
+        el.className = 'ticker-content'; // reset animation classes
+
+        if (headerTickerState === 0) {
+          el.textContent = currentState.eventName;
+          el.classList.add('ticker-event');
+        } else {
+          el.textContent = currentState.highlightName;
+          el.classList.add('ticker-highlight');
+        }
+      }, 5500);
+    }
+
+    function startPreshowSequence() {
+      if (preshowTimer) return;
+      preshowTimer = setInterval(() => {
+        if (currentState.viewMode === 'preshow') {
+          preshowStep = (preshowStep + 1) % 4;
+          updatePreshowStepUI();
+        }
+      }, 2400);
+    }
+
+    function updatePreshowStepUI() {
+      const stage = document.getElementById('stagePreshow');
+      if (!stage) return;
+      stage.classList.remove('step-p1', 'step-vs', 'step-p2', 'step-full');
+      if (preshowStep === 0) stage.classList.add('step-p1');
+      else if (preshowStep === 1) stage.classList.add('step-vs');
+      else if (preshowStep === 2) stage.classList.add('step-p2');
+      else stage.classList.add('step-full');
+    }
+
+    function startLocalTimer() {
+      if (localTimerInterval) return;
+      localTimerInterval = setInterval(() => {
+        if (currentState.isTimerRunning && !currentState.winnerName) {
+          currentState.elapsedSeconds++;
+          document.getElementById('txtTimer').textContent = formatDuration(currentState.elapsedSeconds);
+        }
+      }, 1000);
+    }
+
+    function formatDuration(sec) {
+      const sNum = Number(sec) || 0;
+      const m = Math.floor(sNum / 60).toString().padStart(2, '0');
+      const s = (sNum % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function updateDebugStatus(text) {
+      const el = document.getElementById('txtSyncTime');
+      if (el) el.innerText = text;
+    }
+
+    // Trigger Dynamic 70% Width Shift when Score Changes
+    function triggerDynamicWidthShift(sideLeftScored) {
+      const stageMatch = document.getElementById('stageMatch');
+      if (!stageMatch) return;
+
+      stageMatch.classList.remove('expand-left', 'expand-right');
+      void stageMatch.offsetWidth; // Reflow
+
+      if (sideLeftScored) {
+        stageMatch.classList.add('expand-left');
+      } else {
+        stageMatch.classList.add('expand-right');
+      }
+
+      setTimeout(() => {
+        stageMatch.classList.remove('expand-left', 'expand-right');
+      }, 750);
+    }
+
+    // Trigger Double Shimmer Sweep (2x Sequential Sweeps)
+    function triggerScoreAnimation(elScore, elRing, elShimmer, isLeft) {
+      if (!elScore) return;
+      elScore.classList.remove('pop');
+      void elScore.offsetWidth;
+      elScore.classList.add('pop');
+
+      if (elRing) {
+        elRing.classList.remove('active');
+        void elRing.offsetWidth;
+        elRing.classList.add('active');
+      }
+
+      if (elShimmer) {
+        elShimmer.classList.remove('active');
+        void elShimmer.offsetWidth;
+        elShimmer.classList.add('active');
+      }
+
+      // Trigger 70% - 30% Width Shift
+      triggerDynamicWidthShift(isLeft);
+
+      setTimeout(() => {
+        elScore.classList.remove('pop');
+      }, 300);
+    }
+
+    function switchStageMode(mode) {
+      const stagePreshow = document.getElementById('stagePreshow');
+      const stageMatch = document.getElementById('stageMatch');
+      const stageResult = document.getElementById('stageResult');
+
+      stagePreshow.classList.remove('active');
+      stageMatch.classList.remove('active');
+      stageResult.classList.remove('active');
+
+      if (mode === 'preshow') {
+        stagePreshow.classList.add('active');
+        preshowStep = 0;
+        updatePreshowStepUI();
+        startPreshowSequence();
+      } else if (mode === 'result') {
+        stageResult.classList.add('active');
+      } else {
+        stageMatch.classList.add('active');
+      }
+    }
+
+    function render(data) {
+      if (!data) return;
+
+      const p1Score = data.p1_score !== undefined ? Number(data.p1_score) : (data.p1Score !== undefined ? Number(data.p1Score) : currentState.p1Score);
+      const p2Score = data.p2_score !== undefined ? Number(data.p2_score) : (data.p2Score !== undefined ? Number(data.p2Score) : currentState.p2Score);
+      const p1Games = data.p1_games !== undefined ? Number(data.p1_games) : (data.p1Games !== undefined ? Number(data.p1Games) : currentState.p1Games);
+      const p2Games = data.p2_games !== undefined ? Number(data.p2_games) : (data.p2Games !== undefined ? Number(data.p2Games) : currentState.p2Games);
+      const p1Name = data.p1_name || data.p1Name || currentState.p1Name;
+      const p2Name = data.p2_name || data.p2Name || currentState.p2Name;
+      const p1Color = data.p1_color || data.p1Color || currentState.p1Color;
+      const p2Color = data.p2_color || data.p2Color || currentState.p2Color;
+      const servingPlayer = Number(data.serving_player ?? data.servingPlayer ?? currentState.servingPlayer);
+      const isSwapped = (data.is_swapped === true || data.is_swapped === 'true' || data.isSwapped === true || data.isSwapped === 'true');
+      const sportType = data.sport_type || data.sportType || currentState.sportType;
+      const targetScore = Number(data.target_score ?? data.targetScore ?? currentState.targetScore);
+      const bestOfSets = Number(data.best_of_sets ?? data.bestOfSets ?? currentState.bestOfSets);
+      const statusText = data.status_text || data.statusText || null;
+      const elapsedSeconds = Number(data.elapsed_seconds ?? data.elapsedSeconds ?? currentState.elapsedSeconds);
+      const isTimerRunning = (data.is_timer_running === true || data.is_timer_running === 'true' || data.isTimerRunning === true || data.isTimerRunning === 'true');
+      const winnerName = data.winner_name || data.winnerName || currentState.winnerName;
+      const viewMode = data.view_mode || data.viewMode || currentState.viewMode;
+      const eventName = data.event_name || data.eventName || currentState.eventName;
+      const highlightName = data.highlight_name || data.highlightName || currentState.highlightName;
+      const setScores = data.set_scores || data.setScores || currentState.setScores || [];
+
+      // Per-page video link assignment (if null or undefined in payload, keep empty string)
+      const ytPreshow = data.yt_preshow !== undefined && data.yt_preshow !== null ? data.yt_preshow : (data.ytPreshow !== undefined && data.ytPreshow !== null ? data.ytPreshow : currentState.ytPreshow);
+      const ytMatch = data.yt_match !== undefined && data.yt_match !== null ? data.yt_match : (data.ytMatch !== undefined && data.ytMatch !== null ? data.ytMatch : currentState.ytMatch);
+      const ytResult = data.yt_result !== undefined && data.yt_result !== null ? data.yt_result : (data.ytResult !== undefined && data.ytResult !== null ? data.ytResult : currentState.ytResult);
+
+      currentState = {
+        p1Score, p2Score, p1Games, p2Games, p1Name, p2Name, p1Color, p2Color,
+        servingPlayer, isSwapped, sportType, targetScore, bestOfSets,
+        statusText, elapsedSeconds, isTimerRunning, winnerName, viewMode,
+        eventName, highlightName, setScores, ytPreshow, ytMatch, ytResult
+      };
+
+      // Switch LCD View Mode
+      switchStageMode(viewMode);
+
+      // Update Direct MP4 / YouTube Video Background for current view mode
+      updateVideoBackground(viewMode, ytPreshow, ytMatch, ytResult);
+
+      // Pre-Show Event Name & Highlight Name Assignment
+      document.getElementById('preshowEventBadge').innerHTML = `<i class="fa-solid fa-trophy"></i> ${eventName} <i class="fa-solid fa-trophy"></i>`;
+      document.getElementById('preshowHighlightTitle').textContent = highlightName;
+
+      // Sport Icon Assignment for Pre-Show
+      const sportIconClass = sportType === 'badminton' ? 'fa-shuttle-space' : 'fa-table-tennis-paddle-ball';
+      document.getElementById('avatarP1').innerHTML = `<i class="fa-solid ${sportIconClass}"></i>`;
+      document.getElementById('avatarP2').innerHTML = `<i class="fa-solid ${sportIconClass}"></i>`;
+
+      // Pre-Show Bumper Intro Names
+      document.getElementById('preshowP1').textContent = p1Name;
+      document.getElementById('preshowP2').textContent = p2Name;
+
+      // Result Stage Player Names Assignment
+      document.getElementById('txtResultP1').textContent = p1Name;
+      document.getElementById('txtResultP2').textContent = p2Name;
+
+      // Result Stage Winner vs In-Progress Match Logic
+      const txtWinnerTitle = document.getElementById('txtWinnerTitle');
+      const txtWinnerName = document.getElementById('txtWinnerName');
+      const trophyIcon = document.getElementById('trophyIcon');
+
+      // Best of Sets threshold calculation
+      const setsToWin = Math.ceil(bestOfSets / 2);
+      const isMatchFinished = winnerName != null || p1Games >= setsToWin || p2Games >= setsToWin;
+
+      if (isMatchFinished) {
+        const finalWinner = winnerName || (p1Games > p2Games ? p1Name : p2Name);
+        txtWinnerTitle.textContent = 'PEMENANG PERTANDINGAN';
+        txtWinnerName.textContent = `🎉 ${finalWinner}`;
+        trophyIcon.style.display = 'block';
+        trophyIcon.className = 'fa-solid fa-trophy trophy-icon';
+      } else {
+        trophyIcon.style.display = 'block';
+        trophyIcon.className = 'fa-solid fa-chart-line trophy-icon';
+        if (p1Games === p2Games) {
+          txtWinnerTitle.textContent = 'KEDUDUKAN SEMENTARA (SERI)';
+          txtWinnerName.textContent = `SERI (${p1Games} - ${p2Games})`;
+        } else {
+          const leaderName = p1Games > p2Games ? p1Name : p2Name;
+          txtWinnerTitle.textContent = 'KEDUDUKAN SEMENTARA';
+          txtWinnerName.textContent = `${leaderName} UNGGUL (${p1Games} - ${p2Games})`;
+        }
+      }
+
+      document.getElementById('txtResultGames').textContent = `${p1Games} - ${p2Games}`;
+      document.getElementById('txtResultDuration').textContent = formatDuration(elapsedSeconds);
+
+      // Render Per-Set Detail Breakdown Chips
+      let setScoresHtml = '';
+      if (Array.isArray(setScores) && setScores.length > 0) {
+        setScores.forEach((s) => {
+          const setNum = s.set || s.setNumber || '?';
+          const p1Val = s.p1 !== undefined ? s.p1 : s.p1Score;
+          const p2Val = s.p2 !== undefined ? s.p2 : s.p2Score;
+          setScoresHtml += `
+            <div class="set-chip">
+              <span class="set-num">SET ${setNum}:</span>
+              <span class="set-val">${p1Val} - ${p2Val}</span>
+            </div>
+          `;
+        });
+      } else {
+        setScoresHtml = `<div class="set-chip-empty">Belum ada set yang selesai</div>`;
+      }
+      document.getElementById('setScoresList').innerHTML = setScoresHtml;
+
+      const p1Left = !isSwapped;
+      const leftName = p1Left ? p1Name : p2Name;
+      const rightName = p1Left ? p2Name : p1Name;
+      const leftScore = p1Left ? p1Score : p2Score;
+      const rightScore = p1Left ? p2Score : p1Score;
+      const leftGames = p1Left ? p1Games : p2Games;
+      const rightGames = p1Left ? p2Games : p1Games;
+      const leftColor = p1Left ? p1Color : p2Color;
+      const rightColor = p1Left ? p2Color : p1Color;
+      const leftServing = p1Left ? (servingPlayer === 1) : (servingPlayer === 2);
+
+      // Apply Dynamic Custom Gradient Colors from Flutter Mobile App
+      const boxLeft = document.getElementById('boxLeft');
+      const boxRight = document.getElementById('boxRight');
+      boxLeft.style.background = `linear-gradient(135deg, ${leftColor}, #030712)`;
+      boxRight.style.background = `linear-gradient(135deg, ${rightColor}, #030712)`;
+
+      document.getElementById('nameLeft').textContent = leftName;
+      document.getElementById('nameRight').textContent = rightName;
+
+      const elScoreLeft = document.getElementById('scoreLeft');
+      const elScoreRight = document.getElementById('scoreRight');
+      const ringLeft = document.getElementById('ringLeft');
+      const ringRight = document.getElementById('ringRight');
+      const shimmerLeft = document.getElementById('shimmerLeft');
+      const shimmerRight = document.getElementById('shimmerRight');
+
+      if (elScoreLeft.textContent !== String(leftScore)) {
+        elScoreLeft.textContent = leftScore;
+        triggerScoreAnimation(elScoreLeft, ringLeft, shimmerLeft, true);
+      }
+
+      if (elScoreRight.textContent !== String(rightScore)) {
+        elScoreRight.textContent = rightScore;
+        triggerScoreAnimation(elScoreRight, ringRight, shimmerRight, false);
+      }
+
+      // Bottom Attached Games Won Label Assignment
+      document.getElementById('gamesLeft').textContent = `GAMES WON: ${leftGames}`;
+      document.getElementById('gamesRight').textContent = `GAMES WON: ${rightGames}`;
+
+      if (leftServing) {
+        boxLeft.classList.add('serving');
+        boxRight.classList.remove('serving');
+      } else {
+        boxRight.classList.add('serving');
+        boxLeft.classList.remove('serving');
+      }
+
+      const currSetNum = p1Games + p2Games + 1;
+      document.getElementById('txtSetInfo').textContent = `Set ${currSetNum} dari ${bestOfSets} (${targetScore} Poin)`;
+      document.getElementById('txtTimer').textContent = formatDuration(elapsedSeconds);
+
+      const badge = document.getElementById('badgeStatus');
+      if (statusText) {
+        badge.style.display = 'inline-block';
+        badge.textContent = statusText;
+        if (statusText.startsWith('MATCH POINT')) {
+          badge.classList.add('match-point');
+        } else {
+          badge.classList.remove('match-point');
+        }
+      } else {
+        badge.style.display = 'none';
+      }
+
+      startHeaderTicker();
+      startLocalTimer();
+      updateDebugStatus(`REALTIME MERAH PUTIH [${viewMode.toUpperCase()}] (${new Date().toLocaleTimeString()}) - P1: ${p1Score} | P2: ${p2Score}`);
+    }
+
+    // Single Initial State Fetch
+    async function fetchInitialState() {
+      try {
+        const response = await fetch(
+          `${SUPABASE_URL}/rest/v1/myskor_live?select=*&limit=1`,
+          {
+            method: 'GET',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          if (Array.isArray(data) && data.length > 0) {
+            render(data[0]);
+            setConnectedStatus(true);
+          }
+        }
+      } catch (err) {
+        console.error("Initial fetch info:", err);
+      }
+    }
+
+    function setConnectedStatus(isConnected) {
+      const dot = document.getElementById('liveDot');
+      if (isConnected) {
+        dot.classList.remove('disconnected');
+      } else {
+        dot.classList.add('disconnected');
+      }
+    }
+
+    // Pure Event-Driven Realtime WebSocket Listener (0 Wasted Requests!)
+    if (window.supabase) {
+      try {
+        const realtimeClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        realtimeClient
+          .channel('myskor_live_realtime')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'myskor_live' },
+            (payload) => {
+              if (payload && payload.new) {
+                render(payload.new);
+                setConnectedStatus(true);
+              }
+            }
+          )
+          .subscribe();
+      } catch (e) {
+        console.warn("Realtime WebSockets init info:", e);
+      }
+    }
+
+    // Initial Fetch & Local Timer Start
+    fetchInitialState();
+    startLocalTimer();
+    startHeaderTicker();
+  </script>
+</body>
+
+</html>
